@@ -451,7 +451,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                 results, _, _, dt = val.run(data_dict,
                                         batch_size=batch_size // WORLD_SIZE * 2,
                                         imgsz=imgsz,
-                                        model=str(m),
+                                        model=attempt_load(m, device),
                                         single_cls=single_cls,
                                         dataloader=val_loader,
                                         save_dir=save_dir,
