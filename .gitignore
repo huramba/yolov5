@@ -23,8 +23,8 @@
 !cfg/yolov3*.cfg
 
 storage.googleapis.com
-runs/*
-data/*
+src/runs/*
+src/data/*
 !data/hyps/*
 !data/images/zidane.jpg
 !data/images/bus.jpg
@@ -33,8 +33,8 @@ data/*
 results*.txt
 
 # Datasets -------------------------------------------------------------------------------------------------------------
-coco/
-coco128/
+coco
+coco128
 VOC/
 
 # MATLAB GitIgnore -----------------------------------------------------------------------------------------------------

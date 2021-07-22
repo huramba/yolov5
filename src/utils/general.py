@@ -150,35 +150,36 @@ def check_version(current='0.0.0', minimum='0.0.0', name='version ', pinned=Fals
 
 def check_requirements(requirements='requirements.txt', exclude=()):
     # Check installed dependencies meet requirements (pass *.txt file or list of packages)
-    prefix = colorstr('red', 'bold', 'requirements:')
-    check_python()  # check python version
-    if isinstance(requirements, (str, Path)):  # requirements.txt file
-        file = Path(requirements)
-        if not file.exists():
-            print(f"{prefix} {file.resolve()} not found, check failed.")
-            return
-        requirements = [f'{x.name}{x.specifier}' for x in pkg.parse_requirements(file.open()) if x.name not in exclude]
-    else:  # list or tuple of packages
-        requirements = [x for x in requirements if x not in exclude]
+    # prefix = colorstr('red', 'bold', 'requirements:')
+    # check_python()  # check python version
+    # if isinstance(requirements, (str, Path)):  # requirements.txt file
+    #     file = Path(requirements)
+    #     if not file.exists():
+    #         print(f"{prefix} {file.resolve()} not found, check failed.")
+    #         return
+    #     requirements = [f'{x.name}{x.specifier}' for x in pkg.parse_requirements(file.open()) if x.name not in exclude]
+    # else:  # list or tuple of packages
+    #     requirements = [x for x in requirements if x not in exclude]
 
-    n = 0  # number of packages updates
-    for r in requirements:
-        try:
-            pkg.require(r)
-        except Exception as e:  # DistributionNotFound or VersionConflict if requirements not met
-            print(f"{prefix} {r} not found and is required by YOLOv5, attempting auto-update...")
-            try:
-                assert check_online(), f"'pip install {r}' skipped (offline)"
-                print(check_output(f"pip install '{r}'", shell=True).decode())
-                n += 1
-            except Exception as e:
-                print(f'{prefix} {e}')
+    # n = 0  # number of packages updates
+    # for r in requirements:
+    #     try:
+    #         pkg.require(r)
+    #     except Exception as e:  # DistributionNotFound or VersionConflict if requirements not met
+    #         print(f"{prefix} {r} not found and is required by YOLOv5, attempting auto-update...")
+    #         try:
+    #             assert check_online(), f"'pip install {r}' skipped (offline)"
+    #             print(check_output(f"pip install '{r}'", shell=True).decode())
+    #             n += 1
+    #         except Exception as e:
+    #             print(f'{prefix} {e}')
 
-    if n:  # if packages updated
-        source = file.resolve() if 'file' in locals() else requirements
-        s = f"{prefix} {n} package{'s' * (n > 1)} updated per {source}\n" \
-            f"{prefix} ⚠️ {colorstr('bold', 'Restart runtime or rerun command for updates to take effect')}\n"
-        print(emojis(s))  # emoji-safe
+    # if n:  # if packages updated
+    #     source = file.resolve() if 'file' in locals() else requirements
+    #     s = f"{prefix} {n} package{'s' * (n > 1)} updated per {source}\n" \
+    #         f"{prefix} ⚠️ {colorstr('bold', 'Restart runtime or rerun command for updates to take effect')}\n"
+    #     print(emojis(s))  # emoji-safe
+    pass
 
 
 def check_img_size(img_size, s=32, floor=0):

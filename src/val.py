@@ -147,10 +147,16 @@ def run(data,
                                        prefix=colorstr(f'{task}: '))[0]
 
     seen = 0
+    details = [
+        ('%20s' + '%11s' * 9) % ('object', 'images', 'labels', 'tp', 'fp', 'fn', 'precision', 'recall', 'mAP.5', 'mAP.5:.95')
+    ]
+    details_data = [
+        ['object', 'images', 'labels', 'tp', 'fp', 'fn', 'precision', 'recall', 'mAP.5', 'mAP.5:.95']
+    ]
     confusion_matrix = ConfusionMatrix(nc=nc)
     names = {k: v for k, v in enumerate(model.names if hasattr(model, 'names') else model.module.names)}
     class_map = coco80_to_coco91_class() if is_coco else list(range(1000))
-    s = ('%20s' + '%11s' * 6) % ('Class', 'Images', 'Labels', 'P', 'R', 'mAP@.5', 'mAP@.5:.95')
+    s = ('%20s' + '%11s' * 9) % ('Class', 'Images', 'Labels', 'TP', 'FP', 'FN', 'P', 'R', 'mAP@.5', 'mAP@.5:.95')
     p, r, f1, mp, mr, map50, map, t0, t1, t2 = 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.
     loss = torch.zeros(3, device=device)
     jdict, stats, ap, ap_class = [], [], [], []
@@ -228,21 +234,26 @@ def run(data,
     # Compute statistics
     stats = [np.concatenate(x, 0) for x in zip(*stats)]  # to numpy
     if len(stats) and stats[0].any():
-        p, r, ap, f1, ap_class = ap_per_class(*stats, plot=plots, save_dir=save_dir, names=names)
+        p, r, ap, f1, ap_class, tp, fp = ap_per_class(*stats, plot=plots, save_dir=save_dir, names=names)
         ap50, ap = ap[:, 0], ap.mean(1)  # AP@0.5, AP@0.5:0.95
         mp, mr, map50, map = p.mean(), r.mean(), ap50.mean(), ap.mean()
         nt = np.bincount(stats[3].astype(np.int64), minlength=nc)  # number of targets per class
+        mtp, mfp = tp.sum(), fp.sum()
     else:
         nt = torch.zeros(1)
 
     # Print results
-    pf = '%20s' + '%11i' * 2 + '%11.3g' * 4  # print format
-    print(pf % ('all', seen, nt.sum(), mp, mr, map50, map))
+    pf = '%20s' + '%11i' * 2 + '%11.3g' * 7  # print format
+    details_data.append([ 'all', seen, round(nt.sum()), round(mtp), round(mfp), round(nt.sum() - mtp), mp, mr, map50, map ])
+    details.append(pf % ('all', seen, nt.sum(), mtp, mfp, nt.sum() - mtp, mp, mr, map50, map))
+    print(details[-1])
 
     # Print results per class
     if (verbose or (nc < 50 and not training)) and nc > 1 and len(stats):
         for i, c in enumerate(ap_class):
-            print(pf % (names[c], seen, nt[c], p[i], r[i], ap50[i], ap[i]))
+            details_data.append([names[c], seen, round(nt[c]), round(tp[i]), round(fp[i]), round(nt[c] - tp[i]), p[i], r[i], ap50[i], ap[i]])
+            details.append(pf % (names[c], seen, round(nt[c]), round(tp[i]), round(fp[i]), round(nt[c] - tp[i]), p[i], r[i], ap50[i], ap[i]))
+            print(details[-1])
 
     # Print speeds
     t = tuple(x / seen * 1E3 for x in (t0, t1, t2))  # speeds per image
@@ -291,7 +302,7 @@ def run(data,
     maps = np.zeros(nc) + map
     for i, c in enumerate(ap_class):
         maps[c] = ap[i]
-    return (mp, mr, map50, map, *(loss.cpu() / len(dataloader)).tolist()), maps, t
+    return (mp, mr, map50, map, *(loss.cpu() / len(dataloader)).tolist()), maps, t, details_data
 
 
 def parse_opt():

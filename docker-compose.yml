@@ -1,0 +1,27 @@
+version: '2.3'
+
+services:
+  ci:
+    container_name: $SRV
+    build:
+      context: .
+      dockerfile: deploy/ci.dockerfile
+    image: $REG/ci/$SRV:$CI
+    volumes:
+      - ./src:/srv
+    env_file: data.env
+    command: ./train.sh
+  rt:
+    container_name: $SRV
+    build:
+      context: .
+      args:
+        CI: $REG/ci/$SRV:$CI
+    shm_size: 1024MB
+    volumes:
+      - /mnt/34/datasets/cism/od/yolov5/objects.2021-05-28-16-24/:/srv/dataset
+    env_file: data.env
+    image: $REG/rt/$SRV:$RT
+    command: ./train.sh
+    runtime: nvidia
+    restart: always

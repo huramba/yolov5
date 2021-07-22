@@ -8,6 +8,7 @@ import argparse
 import logging
 import os
 import random
+from utils.xlsx import to_xlsx
 import sys
 import time
 import warnings
@@ -26,7 +27,6 @@ import torch.utils.data
 import yaml
 from torch.cuda import amp
 from torch.nn.parallel import DistributedDataParallel as DDP
-from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
 FILE = Path(__file__).absolute()
@@ -68,6 +68,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     last = wdir / 'last.pt'
     best = wdir / 'best.pt'
     results_file = save_dir / 'results.txt'
+    statfile = save_dir / 'statistic.train.xlsx'
 
     # Hyperparameters
     if isinstance(hyp, str):
@@ -91,12 +92,6 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     # Loggers
     loggers = {'wandb': None, 'tb': None}  # loggers dict
     if RANK in [-1, 0]:
-        # TensorBoard
-        if not evolve:
-            prefix = colorstr('tensorboard: ')
-            LOGGER.info(f"{prefix}Start with 'tensorboard --logdir {opt.project}', view at http://localhost:6006/")
-            loggers['tb'] = SummaryWriter(str(save_dir))
-
         # W&B
         opt.hyp = hyp  # add hyperparameters
         run_id = torch.load(weights).get('wandb_id') if weights.endswith('.pt') and os.path.isfile(weights) else None
@@ -385,7 +380,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             final_epoch = epoch + 1 == epochs
             if not noval or final_epoch:  # Calculate mAP
                 wandb_logger.current_epoch = epoch + 1
-                results, maps, _ = val.run(data_dict,
+                results, maps, _, dt = val.run(data_dict,
                                            batch_size=batch_size // WORLD_SIZE * 2,
                                            imgsz=imgsz,
                                            model=ema.ema,
@@ -397,6 +392,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                                            plots=plots and final_epoch,
                                            wandb_logger=wandb_logger,
                                            compute_loss=compute_loss)
+                to_xlsx(dt, statfile)
 
             # Write
             with open(results_file, 'a') as f:
@@ -451,17 +447,18 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                                               if (save_dir / f).exists()]})
 
         if not evolve:
-            if is_coco:  # COCO dataset
-                for m in [last, best] if best.exists() else [last]:  # speed, mAP tests
-                    results, _, _ = val.run(data_dict,
-                                            batch_size=batch_size // WORLD_SIZE * 2,
-                                            imgsz=imgsz,
-                                            model=attempt_load(m, device).half(),
-                                            single_cls=single_cls,
-                                            dataloader=val_loader,
-                                            save_dir=save_dir,
-                                            save_json=True,
-                                            plots=False)
+            for m in [last, best] if best.exists() else [last]:  # speed, mAP tests
+                results, _, _, dt = val.run(data_dict,
+                                        batch_size=batch_size // WORLD_SIZE * 2,
+                                        imgsz=imgsz,
+                                        model=str(m),
+                                        single_cls=single_cls,
+                                        dataloader=val_loader,
+                                        save_dir=save_dir,
+                                        save_json=True,
+                                        plots=False)
+
+                to_xlsx(dt, save_dir / f'statistic.test.{m.name.replace(".pt", ".xlsx")}')
 
             # Strip optimizers
             for f in last, best:
