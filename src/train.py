@@ -46,6 +46,7 @@ from utils.plots import plot_images, plot_labels, plot_results, plot_evolution
 from utils.torch_utils import ModelEMA, select_device, intersect_dicts, torch_distributed_zero_first, de_parallel
 from utils.wandb_logging.wandb_utils import WandbLogger, check_wandb_resume
 from utils.metrics import fitness
+from export import run as export
 
 LOGGER = logging.getLogger(__name__)
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
@@ -67,6 +68,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     wdir.mkdir(parents=True, exist_ok=True)  # make dir
     last = wdir / 'last.pt'
     best = wdir / 'best.pt'
+    final = wdir / 'final.pt'
     results_file = save_dir / 'results.txt'
     statfile = save_dir / 'statistic.train.xlsx'
 
@@ -97,7 +99,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         run_id = torch.load(weights).get('wandb_id') if weights.endswith('.pt') and os.path.isfile(weights) else None
         run_id = run_id if opt.resume else None  # start fresh run if transfer learning
         wandb_logger = WandbLogger(opt, save_dir.stem, run_id, data_dict)
-        loggers['wandb'] = wandb_logger.wandb
+        loggers['wandb'] = None  # wandb_logger.wandb
         if loggers['wandb']:
             data_dict = wandb_logger.data_dict
             weights, epochs, hyp = opt.weights, opt.epochs, opt.hyp  # may update weights, epochs if resuming
@@ -447,31 +449,33 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                                               if (save_dir / f).exists()]})
 
         if not evolve:
-            for m in [last, best] if best.exists() else [last]:  # speed, mAP tests
-                results, _, _, dt = val.run(data_dict,
-                                        batch_size=batch_size // WORLD_SIZE * 2,
-                                        imgsz=imgsz,
-                                        model=attempt_load(m, device),
-                                        single_cls=single_cls,
-                                        dataloader=val_loader,
-                                        save_dir=save_dir,
-                                        save_json=True,
-                                        plots=False)
+            results, _, _, dt = val.run(data_dict,
+                                    batch_size=batch_size // WORLD_SIZE * 2,
+                                    imgsz=imgsz,
+                                    model=attempt_load(best, device),
+                                    single_cls=single_cls,
+                                    dataloader=val_loader,
+                                    save_dir=save_dir,
+                                    save_json=True,
+                                    plots=False)
 
-                to_xlsx(dt, save_dir / f'statistic.test.{m.name.replace(".pt", ".xlsx")}')
+            to_xlsx(dt, str(save_dir / 'statistic.test..xlsx'))
 
             # Strip optimizers
             for f in last, best:
                 if f.exists():
                     strip_optimizer(f)  # strip optimizers
             if loggers['wandb']:  # Log the stripped model
+                final = best if best.exists() else last
+                export(str(final), opt.imgsz, device=opt.device, include=['onnx'], dynamic=True, simplify=True)
+                
                 loggers['wandb'].log_artifact(str(best if best.exists() else last), type='model',
                                               name='run_' + wandb_logger.wandb_run.id + '_model',
                                               aliases=['latest', 'best', 'stripped'])
         wandb_logger.finish_run()
 
     torch.cuda.empty_cache()
-    return results
+    return results, 'some_mlflow_run_id'
 
 
 def parse_opt(known=False):
@@ -510,6 +514,7 @@ def parse_opt(known=False):
     parser.add_argument('--save_period', type=int, default=-1, help='Log model after every "save_period" epoch')
     parser.add_argument('--artifact_alias', type=str, default="latest", help='version of dataset artifact to be used')
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
+    parser.add_argument('--mlflow-experiment', '-mle', type=str, help='Mlflow experiment name')
     opt = parser.parse_known_args()[0] if known else parser.parse_args()
     return opt
 
@@ -550,7 +555,7 @@ def main(opt):
 
     # Train
     if not opt.evolve:
-        train(opt.hyp, opt, device)
+        results, mlflow_run_id = train(opt.hyp, opt, device)
         if WORLD_SIZE > 1 and RANK == 0:
             _ = [print('Destroying process group... ', end=''), dist.destroy_process_group(), print('Done.')]
 
