@@ -285,6 +285,10 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     logger = get_logger(exname, datetime.now().strftime('%Y-%m-%d-%H-%M-%S'))
     logger.start_run()
     logger.log_params(hyp)
+    logger.log_params({
+        'epochs': epochs,
+        'names_count': len(names)
+    })
     for epoch in range(start_epoch, epochs):  # epoch ------------------------------------------------------------------
         model.train()
 
