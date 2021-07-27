@@ -461,6 +461,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                                     dataloader=val_loader,
                                     save_dir=save_dir,
                                     save_json=False,
+                                    iou_thres=opt.iou_thres,
                                     plots=False)
 
             to_xlsx(dt, str(save_dir / 'statistic.test.xlsx'))
@@ -518,7 +519,7 @@ def parse_opt(known=False):
     parser.add_argument('--save_period', type=int, default=-1, help='Log model after every "save_period" epoch')
     parser.add_argument('--artifact_alias', type=str, default="latest", help='version of dataset artifact to be used')
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
-    parser.add_argument('--mlflow-experiment', '-mle', type=str, help='Mlflow experiment name')
+    parser.add_argument('--iou-thres', '-iou', type=float, default=0.6, help='Final test validation threshold')
     opt = parser.parse_known_args()[0] if known else parser.parse_args()
     return opt
 
