@@ -5,7 +5,8 @@ FROM pytorch/pytorch:1.7.1-cuda11.0-cudnn8-runtime
 
 # Install linux packages
 RUN apt update && \
-    apt install -y --no-install-recommends zip htop screen libgl1-mesa-glx gcc libglib2.0-0 && \
+    apt install -y --no-install-recommends zip \ 
+    htop screen libgl1-mesa-glx gcc libglib2.0-0 && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists
 

@@ -112,6 +112,8 @@ def run(weights='./yolov5s.pt',  # weights path
         ):
     t = time.time()
     include = [x.lower() for x in include]
+    if isinstance(img_size, int):
+        img_size = (img_size, img_size)
     img_size *= 2 if len(img_size) == 1 else 1  # expand
     file = Path(weights)
 
