@@ -131,6 +131,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         check_dataset(data_dict)  # check
     train_path = data_dict['train']
     val_path = data_dict['val']
+    test_path = data_dict['test']
 
     # Freeze
     freeze = []  # parameter names to freeze (full or partial)
@@ -458,7 +459,6 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                                     task='test',
                                     model=attempt_load(best, device),
                                     single_cls=single_cls,
-                                    dataloader=val_loader,
                                     save_dir=save_dir,
                                     save_json=False,
                                     iou_thres=opt.iou_thres,
