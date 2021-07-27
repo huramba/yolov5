@@ -411,7 +411,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                     'x/lr0', 'x/lr1', 'x/lr2']  # params
             # log metrics and tags mlflow
             metrics = {
-                tag: x.item() if hasattr(x, 'otem') else float(x)
+                tag: x.item() if hasattr(x, 'item') else float(x)
                 for x, tag in
                 zip(list(mloss[:-1]) + list(results) + lr, tags)
             }
@@ -466,6 +466,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                                     save_dir=save_dir,
                                     save_json=False,
                                     iou_thres=opt.iou_thres,
+                                    verbose=True,
                                     plots=False)
 
             to_xlsx(dt, str(save_dir / 'statistic.test.xlsx'))
