@@ -242,7 +242,14 @@ def run(data,
 
     # Print results
     pf = '%20s' + '%11i' * 2 + '%11.3g' * 7  # print format
-    details_data.append([ 'all', seen, round(nt.sum()), round(mtp), round(mfp), round(nt.sum() - mtp), mp, mr, map50, map ])
+    details_data.append([
+        'all',
+        seen,
+        round(nt.sum()),
+        round(mtp),
+        round(mfp),
+        round(nt.sum() - mtp),
+        mp, mr, map50, map ])
     details.append(pf % ('all', seen, nt.sum(), mtp, mfp, nt.sum() - mtp, mp, mr, map50, map))
     print(details[-1])
 

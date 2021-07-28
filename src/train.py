@@ -456,11 +456,16 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             #     wandb_logger.log({"Results": [loggers['wandb'].Image(str(save_dir / f), caption=f) for f in files
             #                                   if (save_dir / f).exists()]})
 
-        if not evolve:
+        if not evolve and test_path is not None:
+            test_loader = create_dataloader(test_path, imgsz, batch_size // WORLD_SIZE * 2, gs, single_cls,
+                                            hyp=hyp, cache=opt.cache_images and not noval, rect=True, rank=-1,
+                                            workers=workers, pad=0.5,
+                                            prefix=colorstr('val: '))[0]
             results, _, _, dt = val.run(data_dict,
                                     batch_size=batch_size // WORLD_SIZE * 2,
                                     imgsz=imgsz,
                                     task='test',
+                                    dataloader=test_loader,
                                     model=attempt_load(best, device),
                                     single_cls=single_cls,
                                     save_dir=save_dir,
@@ -480,7 +485,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             shutil.copyfile(final_cktp, final)
             export(str(final), opt.imgsz, device=opt.device, include=['onnx'], dynamic=True, simplify=True)
             
-            logger.log_artifacts(str(save_dir))
+        logger.log_artifacts(str(save_dir))
 
     logger.end_run()
 
