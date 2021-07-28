@@ -231,14 +231,14 @@ def run(data,
 
     # Compute statistics
     stats = [np.concatenate(x, 0) for x in zip(*stats)]  # to numpy
-    if len(stats) and stats[0].any():
+    if len(stats) > 0 and stats[0].any():
         p, r, ap, f1, ap_class, tp, fp = ap_per_class(*stats, plot=plots, save_dir=save_dir, names=names)
         ap50, ap = ap[:, 0], ap.mean(1)  # AP@0.5, AP@0.5:0.95
         mp, mr, map50, map = p.mean(), r.mean(), ap50.mean(), ap.mean()
         nt = np.bincount(stats[3].astype(np.int64), minlength=nc)  # number of targets per class
         mtp, mfp = tp.sum(), fp.sum()
     else:
-        nt = torch.zeros(1)
+        nt = np.zeros(1)
 
     # Print results
     pf = '%20s' + '%11i' * 2 + '%11.3g' * 7  # print format
