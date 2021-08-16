@@ -470,11 +470,26 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                                     single_cls=single_cls,
                                     save_dir=save_dir,
                                     save_json=False,
-                                    iou_thres=opt.iou_thres,
+                                    iou_thres=.5,
                                     verbose=True,
                                     plots=False)
 
             to_xlsx(dt, str(save_dir / 'statistic.test.xlsx'))
+
+            results, _, _, dt = val.run(data_dict,
+                                    batch_size=batch_size // WORLD_SIZE * 2,
+                                    imgsz=imgsz,
+                                    task='test',
+                                    dataloader=test_loader,
+                                    model=attempt_load(best, device),
+                                    single_cls=single_cls,
+                                    save_dir=save_dir,
+                                    save_json=False,
+                                    iou_thres=.7,
+                                    verbose=True,
+                                    plots=False)
+
+            to_xlsx(dt, str(save_dir / 'statistic.test.70.xlsx'))
 
             # Strip optimizers
             for f in last, best:
@@ -572,7 +587,6 @@ def main(opt):
         results = train(opt.hyp, opt, device)
         if WORLD_SIZE > 1 and RANK == 0:
             _ = [print('Destroying process group... ', end=''), dist.destroy_process_group(), print('Done.')]
-
     # Evolve hyperparameters (optional)
     else:
         # Hyperparameter evolution metadata (mutation scale 0-1, lower_limit, upper_limit)
