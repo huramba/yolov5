@@ -33,7 +33,6 @@ class MLLogger:
 class MlflowLogger(MLLogger):
 
     def __init__(self, experiment_name, run_name):
-        os.environ['MLFLOW_S3_ENDPOINT_URL'] = os.getenv('URL_MINIO', 'http://10.111.103.119:9001')
         os.environ['AWS_ACCESS_KEY_ID'] = os.getenv('ACCESS_KEY', 'ocas')
         os.environ['AWS_SECRET_ACCESS_KEY'] = os.getenv('SECRET_KEY', 'Akkdj8y9iBkkxW')
         mlflow.tracking.set_tracking_uri(os.getenv('MLFLOW_URI', 'https://mlflow.k8s.ocas.ai'))
