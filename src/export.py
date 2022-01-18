@@ -53,7 +53,7 @@ def export_onnx(model, img, file, opset_version, train, dynamic, simplify):
                           input_names=['images'],
                           output_names=['output'],
                           dynamic_axes={'images': {0: 'batch', 2: 'height', 3: 'width'},  # shape(1,3,640,640)
-                                        'output': {0: 'batch', 1: 'anchors'}  # shape(1,25200,85)
+                                        'output': {0: 'batch', 1: 'anchors', 2: 'probclassbox'}  # shape(1,25200,85)
                                         } if dynamic else None)
 
         # Checks
