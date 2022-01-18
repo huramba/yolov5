@@ -18,6 +18,8 @@ RUN python -m pip install --upgrade pip \
     tqdm>=4.41.0 seaborn>=0.11.0 pandas onnx>=1.9.0 \
     thop gsutil boto3 openpyxl mlflow
 
+RUN python -m pip install onnx-simplifier
+
 # Create working directory
 WORKDIR /srv
 

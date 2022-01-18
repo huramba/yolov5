@@ -17,8 +17,6 @@ services:
       args:
         CI: $REG/ci/$SRV:$CI
     shm_size: 1024MB
-    volumes:
-      - /home/huramba/datasets/test-syringe.2021-06-17-11-50/:/srv/dataset
     env_file: data.env
     image: $REG/rt/$SRV:$RT
     restart: always

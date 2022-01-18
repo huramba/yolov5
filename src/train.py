@@ -498,7 +498,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             
             final_cktp = best if best.exists() else last
             shutil.copyfile(final_cktp, final)
-            export(str(final), opt.imgsz, device=opt.device, include=['onnx'], dynamic=True, simplify=True)
+        export(str(final), opt.imgsz, device=opt.device, include=['onnx'], dynamic=True, simplify=True)
             
         logger.log_artifacts(str(save_dir))
 
