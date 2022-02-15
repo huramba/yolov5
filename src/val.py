@@ -162,8 +162,7 @@ def run(data,
     loss = torch.zeros(3, device=device)
     jdict, stats, ap, ap_class = [], [], [], []
     for batch_i, (img, targets, paths, shapes) in enumerate(dataloader):
-        if logger:
-            logger.info(s)
+        print(s)
         t_ = time_sync()
         img = img.to(device, non_blocking=True)
         img = img.half() if half else img.float()  # uint8 to fp16/32
@@ -254,20 +253,20 @@ def run(data,
         round(nt.sum() - mtp),
         mp, mr, map50, map ])
     details.append(pf % ('all', seen, nt.sum(), mtp, mfp, nt.sum() - mtp, mp, mr, map50, map))
-    logger.info(details[-1])
+    print(details[-1])
 
     # Print results per class
     if (verbose or (nc < 50 and not training)) and nc > 1 and len(stats):
         for i, c in enumerate(ap_class):
             details_data.append([names[c], seen, round(nt[c]), round(tp[i]), round(fp[i]), round(nt[c] - tp[i]), p[i], r[i], ap50[i], ap[i]])
             details.append(pf % (names[c], seen, round(nt[c]), round(tp[i]), round(fp[i]), round(nt[c] - tp[i]), p[i], r[i], ap50[i], ap[i]))
-            logger.info(details[-1])
+            print(details[-1])
 
     # Print speeds
     t = tuple(x / seen * 1E3 for x in (t0, t1, t2))  # speeds per image
     if not training:
         shape = (batch_size, 3, imgsz, imgsz)
-        logger.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {shape}' % t)
+        print(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {shape}' % t)
 
     # Plots
     if plots:
@@ -278,7 +277,7 @@ def run(data,
         w = Path(weights[0] if isinstance(weights, list) else weights).stem if weights is not None else ''  # weights
         anno_json = str(Path(data.get('path', '../coco')) / 'annotations/instances_val2017.json')  # annotations json
         pred_json = str(save_dir / f"{w}_predictions.json")  # predictions json
-        logger.info(f'\nEvaluating pycocotools mAP... saving {pred_json}...')
+        print(f'\nEvaluating pycocotools mAP... saving {pred_json}...')
         with open(pred_json, 'w') as f:
             json.dump(jdict, f)
 
@@ -303,7 +302,7 @@ def run(data,
     model.float()  # for training
     if not training:
         s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ''
-        logger.info(f"Results saved to {save_dir}{s}")
+        print(f"Results saved to {save_dir}{s}")
     maps = np.zeros(nc) + map
     for i, c in enumerate(ap_class):
         maps[c] = ap[i]
