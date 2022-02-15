@@ -99,6 +99,7 @@ def run(data,
         plots=True,
         wandb_logger=None,
         compute_loss=None,
+        logger=None
         ):
     # Initialize/load model and set device
     training = model is not None
@@ -160,7 +161,9 @@ def run(data,
     p, r, f1, mp, mr, map50, map, t0, t1, t2 = 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.
     loss = torch.zeros(3, device=device)
     jdict, stats, ap, ap_class = [], [], [], []
-    for batch_i, (img, targets, paths, shapes) in enumerate(tqdm(dataloader, desc=s)):
+    for batch_i, (img, targets, paths, shapes) in enumerate(dataloader):
+        if logger:
+            logger.info(s)
         t_ = time_sync()
         img = img.to(device, non_blocking=True)
         img = img.half() if half else img.float()  # uint8 to fp16/32
@@ -251,20 +254,20 @@ def run(data,
         round(nt.sum() - mtp),
         mp, mr, map50, map ])
     details.append(pf % ('all', seen, nt.sum(), mtp, mfp, nt.sum() - mtp, mp, mr, map50, map))
-    print(details[-1])
+    logger.info(details[-1])
 
     # Print results per class
     if (verbose or (nc < 50 and not training)) and nc > 1 and len(stats):
         for i, c in enumerate(ap_class):
             details_data.append([names[c], seen, round(nt[c]), round(tp[i]), round(fp[i]), round(nt[c] - tp[i]), p[i], r[i], ap50[i], ap[i]])
             details.append(pf % (names[c], seen, round(nt[c]), round(tp[i]), round(fp[i]), round(nt[c] - tp[i]), p[i], r[i], ap50[i], ap[i]))
-            print(details[-1])
+            logger.info(details[-1])
 
     # Print speeds
     t = tuple(x / seen * 1E3 for x in (t0, t1, t2))  # speeds per image
     if not training:
         shape = (batch_size, 3, imgsz, imgsz)
-        print(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {shape}' % t)
+        logger.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {shape}' % t)
 
     # Plots
     if plots:
@@ -275,7 +278,7 @@ def run(data,
         w = Path(weights[0] if isinstance(weights, list) else weights).stem if weights is not None else ''  # weights
         anno_json = str(Path(data.get('path', '../coco')) / 'annotations/instances_val2017.json')  # annotations json
         pred_json = str(save_dir / f"{w}_predictions.json")  # predictions json
-        print(f'\nEvaluating pycocotools mAP... saving {pred_json}...')
+        logger.info(f'\nEvaluating pycocotools mAP... saving {pred_json}...')
         with open(pred_json, 'w') as f:
             json.dump(jdict, f)
 
@@ -294,13 +297,13 @@ def run(data,
             eval.summarize()
             map, map50 = eval.stats[:2]  # update results (mAP@0.5:0.95, mAP@0.5)
         except Exception as e:
-            print(f'pycocotools unable to run: {e}')
+            logger.error(f'pycocotools unable to run: {e}')
 
     # Return results
     model.float()  # for training
     if not training:
         s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ''
-        print(f"Results saved to {save_dir}{s}")
+        logger.info(f"Results saved to {save_dir}{s}")
     maps = np.zeros(nc) + map
     for i, c in enumerate(ap_class):
         maps[c] = ap[i]
