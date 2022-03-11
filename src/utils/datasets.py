@@ -460,7 +460,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
             for i, x in enumerate(results):
                 self.imgs[i], self.img_hw0[i], self.img_hw[i] = x  # img, hw_original, hw_resized = load_image(self, i)
                 gb += self.imgs[i].nbytes
-                print(f'{prefix}Caching images ({gb / 1E9:.1f}GB)')
+            print(f'{prefix}Caching images ({gb / 1E9:.1f}GB)')
 
     def cache_labels(self, path=Path('./labels.cache'), prefix=''):
         # Cache dataset labels, check images and read shapes
@@ -476,7 +476,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                 nc += nc_f
                 if im_file:
                     x[im_file] = [l, shape, segments]
-                print(f"{desc}{nf} found, {nm} missing, {ne} empty, {nc} corrupted")
+            print(f"{desc}{nf} found, {nm} missing, {ne} empty, {nc} corrupted")
 
         if msgs:
             logging.info('\n'.join(msgs))

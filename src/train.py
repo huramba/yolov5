@@ -29,7 +29,6 @@ import torch.utils.data
 import yaml
 from torch.cuda import amp
 from torch.nn.parallel import DistributedDataParallel as DDP
-from tqdm import tqdm
 
 FILE = Path(__file__).absolute()
 sys.path.append(FILE.parents[0].as_posix())  # add yolov5/ to path
@@ -55,7 +54,7 @@ LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable
 RANK = int(os.getenv('RANK', -1))
 WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
 EXPERIMENT_KEY = os.getenv('EXPERIMENT_NAME', 'test')
-
+EXPERIMENT_CATALOG = os.getenv('EXPERIMENT_CATALOG')
 
 def train(hyp,  # path/to/hyp.yaml or hyp dictionary
           opt,
@@ -499,7 +498,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             
             final_cktp = best if best.exists() else last
             shutil.copyfile(final_cktp, final)
-        export(str(final), opt.imgsz, device=opt.device, include=['onnx'], dynamic=True, simplify=True)
+        export(str(final), opt.imgsz, include=['onnx'], dynamic=True, simplify=True)
             
         logger.log_artifacts(str(save_dir))
 
@@ -570,7 +569,7 @@ def main(opt):
         opt.data, opt.cfg, opt.hyp = check_file(opt.data), check_file(opt.cfg), check_file(opt.hyp)  # check files
         assert len(opt.cfg) or len(opt.weights), 'either --cfg or --weights must be specified'
         opt.name = 'evolve' if opt.evolve else opt.name
-        opt.save_dir = str(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok or opt.evolve))
+        opt.save_dir = Path(EXPERIMENT_CATALOG) if EXPERIMENT_CATALOG else str(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok or opt.evolve))
 
     # DDP mode
     device = select_device(opt.device, batch_size=opt.batch_size)

@@ -14,7 +14,6 @@ from threading import Thread
 import numpy as np
 import torch
 import yaml
-from tqdm import tqdm
 
 FILE = Path(__file__).absolute()
 sys.path.append(FILE.parents[0].as_posix())  # add yolov5/ to path
